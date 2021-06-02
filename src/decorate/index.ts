@@ -1,7 +1,6 @@
 import "reflect-metadata";
 import { ReflectHelperService } from "./reflect-helper";
-import { IDocorateMetadata } from "../types";
-import { ITableCreateDataType } from "src/cassandra/types";
+import { IDocorateMetadata, ITableCreateDataType } from "../types";
 
 export function tableOverride(entityName: string) {
   return function entityOverride<T extends { new (...args: any[]): {} }>(constructor: T) {

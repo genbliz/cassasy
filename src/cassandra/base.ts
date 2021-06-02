@@ -1,8 +1,9 @@
+import { UniqueIdGeneratorService } from "./../helpers/unique-id-generator-service";
+import { EntityFactory } from "./../decorate/entity";
 import { ReflectHelperService } from "./../decorate/reflect-helper";
 import cassandra from "cassandra-driver";
-import { ITableCreateDataType } from "./types";
-// import { QueryBuilderService } from "./query-builder";
-import { EntityTypeInstance, IFieldMetadata } from "../types";
+import { QueryBuilderService } from "./query-builder";
+import { EntityTypeInstance, IFieldMetadata, IQueryDefinition, ITableCreateDataType } from "../types";
 
 export type IFieldTypeLocal = Record<string, { type: ITableCreateDataType }>;
 
@@ -14,14 +15,15 @@ interface ITableCreate<T> {
 
 interface ITableInfo<T> {
   tableName: string;
+  tableNameFullPath: string;
   partitionKeyMeta: IFieldMetadata;
   sortKeyMeta: IFieldMetadata;
   otherAttributesMeta: IFieldMetadata[];
 }
 
-// type IOrderBy<T> = {
-//   [P in keyof T]: "asc" | "desc";
-// };
+type IOrderBy<T> = {
+  [P in keyof T]: "asc" | "desc";
+};
 
 export abstract class CassandraOperations<T> {
   private readonly keyspaceName: string;
@@ -30,6 +32,7 @@ export abstract class CassandraOperations<T> {
   private readonly entity: EntityTypeInstance<T>;
   private entityInstance: T | undefined;
   private tableInfo: ITableInfo<T> | undefined;
+  private mapper: cassandra.mapping.ModelMapper<T> | undefined;
 
   constructor({ keyspaceName, cassandraClient, entity }: ITableCreate<T>) {
     this.keyspaceName = keyspaceName;
@@ -53,6 +56,28 @@ export abstract class CassandraOperations<T> {
       this.entityInstance = new this.entity();
     }
     return this.entityInstance;
+  }
+
+  private toPlainObject<T = any>(data: any): T {
+    return JSON.parse(JSON.stringify(data));
+  }
+
+  private getMapper() {
+    if (!this.mapper) {
+      const { tableName } = this.getTableInfo();
+      const modelKey = [tableName[0].toUpperCase(), tableName.slice(1), "modelKey"].join("");
+      const instance = new cassandra.mapping.Mapper(this.client(), {
+        models: {
+          [modelKey]: {
+            mappings: new cassandra.mapping.UnderscoreCqlToCamelCaseMappings(),
+            keyspace: this.keyspaceName,
+            tables: [tableName],
+          },
+        },
+      });
+      this.mapper = instance.forModel<T>(modelKey);
+    }
+    return this.mapper;
   }
 
   private getTableInfo() {
@@ -90,6 +115,7 @@ export abstract class CassandraOperations<T> {
         otherAttributesMeta: Object.values(attributes),
         partitionKeyMeta: partitionKey01[0],
         sortKeyMeta: sortKey01[0],
+        tableNameFullPath: [this.keyspaceName, tableName].join("."),
       };
     }
     return { ...this.tableInfo };
@@ -129,7 +155,6 @@ export abstract class CassandraOperations<T> {
     return result;
   }
 
-  /*
   async findBase({
     query,
     limit,
@@ -170,6 +195,7 @@ export abstract class CassandraOperations<T> {
     return result.toArray();
   }
 
+  /*
   async getAllBase({
     limit,
     fields,
@@ -198,19 +224,44 @@ export abstract class CassandraOperations<T> {
     const result = await this.getMapper().findAll(option01);
     return result.toArray();
   }
-
-  async createBase({ data, applyToFields }: { data: T; applyToFields?: (keyof T)[] }) {
-    const opt = applyToFields ? { fields: applyToFields as string[] } : undefined;
-    const result = await this.getMapper().insert(data, opt);
-    return result.toArray();
-  }
   */
 
-  async selectAll() {
-    const target01 = this.getTargetInstance();
-    const tableName = ReflectHelperService.getMetadata_TableName(target01);
-    const sql = `SELECT * FROM ${this.keyspaceName}.${tableName}`;
+  async createBase({ data }: { data: T }) {
+    const { tableNameFullPath, partitionKeyMeta, sortKeyMeta } = this.getTableInfo();
+
+    const data01 = { ...data };
+
+    const dataForPersist = EntityFactory.fromInputedData(this.entity as any, data01).toPersistenceData();
+
+    if (!(dataForPersist && typeof dataForPersist === "object")) {
+      throw new Error("Invalid persist data");
+    }
+
+    if (!dataForPersist[partitionKeyMeta.field]) {
+      dataForPersist[partitionKeyMeta.field] = UniqueIdGeneratorService.getTimeStampGuid();
+    }
+
+    if (!dataForPersist[sortKeyMeta.field]) {
+      throw new Error("sortKey is required");
+    }
+
+    const dataToDbString = JSON.stringify(dataForPersist);
+    const sql = `INSERT INTO ${tableNameFullPath} JSON '${dataToDbString}'`;
+
+    console.log({ sql });
+
+    console.time(tableNameFullPath);
+
+    await this.client().execute(sql);
+
+    console.timeEnd(tableNameFullPath);
+    return dataForPersist;
+  }
+
+  async getAllBase() {
+    const { tableNameFullPath } = this.getTableInfo();
+    const sql = `SELECT * FROM ${tableNameFullPath}`;
     const result = await this.client().execute(sql, []);
-    return result.rows;
+    return this.toPlainObject<T[]>(result.rows || []);
   }
 }

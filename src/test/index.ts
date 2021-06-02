@@ -17,15 +17,30 @@ class CassandraImplementBase extends CassandraOperations<IGoods> {
     return super.createTable();
   }
 
-  /*
-    getAll() {
-    return this.getAllBase({
-      fields: ["id", "name"],
-      limit: 2,
-      orderBy: { id: "asc" },
+  create() {
+    return super.createBase({
+      data: {
+        cost: 8800,
+        // id: Date.now().toString(),
+        item: "Melon",
+        purchaseDate: new Date().toISOString(),
+      } as IGoods,
     });
   }
 
+  getAll() {
+    return this.getAllBase();
+  }
+
+  find() {
+    return this.findBase({
+      query: {
+        cost: { $gte: 1000 },
+      },
+    });
+  }
+
+  /*
   find() {
     return this.findBase({
       query: {
@@ -71,6 +86,14 @@ class CassandraImplementBase extends CassandraOperations<IGoods> {
 
 export const CassandraImplement = new CassandraImplementBase();
 
-CassandraImplement.createTabl().catch((e) => console.log(e));
+CassandraImplement.find()
+  .then((e) => {
+    console.log(e);
+    process.exit(0);
+  })
+  .catch((e) => {
+    console.log(e);
+    process.exit(0);
+  });
 
 // ts-node ./src/test/index.ts

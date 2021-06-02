@@ -1,4 +1,4 @@
-import { EntityTypeInstance } from "../types";
+import { EntityTypeInstance, IEntity } from "../types";
 import { ReflectHelperService } from "./reflect-helper";
 
 export class EntityFactory {
@@ -9,12 +9,14 @@ export class EntityFactory {
 
     const target01 = new target();
 
-    const propsData = ReflectHelperService.getMetadata_AttributesMap(target01);
-    const idProperty = ReflectHelperService.getMetadata_PartitionKey(target01);
+    const attributes = ReflectHelperService.getMetadata_AttributesMap(target01);
+    const partitionKey = ReflectHelperService.getMetadata_PartitionKey(target01);
+    const sortKey = ReflectHelperService.getMetadata_SortKey(target01);
 
     const fullProps = {
-      ...idProperty,
-      ...propsData,
+      ...partitionKey,
+      ...sortKey,
+      ...attributes,
     };
 
     const undefinedKeys: string[] = [];
@@ -45,12 +47,14 @@ export class EntityFactory {
     }
     const target01 = new target();
 
-    const propsData = ReflectHelperService.getMetadata_AttributesMap(target01);
-    const idProperty = ReflectHelperService.getMetadata_PartitionKey(target01);
+    const attributes = ReflectHelperService.getMetadata_AttributesMap(target01);
+    const partitionKey = ReflectHelperService.getMetadata_PartitionKey(target01);
+    const sortKey = ReflectHelperService.getMetadata_SortKey(target01);
 
     const fullProps = {
-      ...idProperty,
-      ...propsData,
+      ...partitionKey,
+      ...sortKey,
+      ...attributes,
     };
 
     Object.values(fullProps).forEach(({ field, key }) => {
@@ -62,11 +66,6 @@ export class EntityFactory {
     });
     return target01;
   }
-}
-
-export interface IEntity {
-  toPersistenceData(): any;
-  toOutputData(): any;
 }
 
 export default class BaseEntity implements IEntity {
@@ -85,12 +84,14 @@ export default class BaseEntity implements IEntity {
   toPersistenceData(): any {
     const output = {} as any;
 
-    const propsData = ReflectHelperService.getMetadata_AttributesMap(this);
-    const idProperty = ReflectHelperService.getMetadata_PartitionKey(this);
+    const attributes = ReflectHelperService.getMetadata_AttributesMap(this);
+    const partitionKey = ReflectHelperService.getMetadata_PartitionKey(this);
+    const sortKey = ReflectHelperService.getMetadata_SortKey(this);
 
     const fullData = {
-      ...propsData,
-      ...idProperty,
+      ...partitionKey,
+      ...sortKey,
+      ...attributes,
     };
 
     Object.values(fullData).forEach(({ key, field }) => {
@@ -104,13 +105,15 @@ export default class BaseEntity implements IEntity {
   toOutputData<TDataOut = any>(): TDataOut {
     const output = {} as any;
 
-    const propsData = ReflectHelperService.getMetadata_AttributesMap(this);
-    const idProperty = ReflectHelperService.getMetadata_PartitionKey(this);
+    const attributes = ReflectHelperService.getMetadata_AttributesMap(this);
+    const partitionKey = ReflectHelperService.getMetadata_PartitionKey(this);
+    const sortKey = ReflectHelperService.getMetadata_SortKey(this);
     const virtual = ReflectHelperService.getMetadata_Virtual(this);
 
     const fullData = {
-      ...propsData,
-      ...idProperty,
+      ...partitionKey,
+      ...sortKey,
+      ...attributes,
       ...virtual,
     };
 

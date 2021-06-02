@@ -1,4 +1,4 @@
-import BaseEntity from "../../decorate/base-entity";
+import BaseEntity from "../../decorate/entity";
 import { table, fieldProp, partitionKey, sortKey, virtualProp } from "../../decorate";
 
 export interface IPatient {

@@ -12,9 +12,7 @@ const DefinedKeys = {
 class ReflectHelperServiceBase {
   //
   private _getMetadata<T = IDocorateMetadata>({ metadataKey, target }: { metadataKey: symbol; target: Object }): T {
-    const nny = Reflect.getMetadata(metadataKey, target) || {};
-    console.log({ nny, metadataKey });
-    return nny;
+    return Reflect.getMetadata(metadataKey, target) || {};
   }
 
   private _defineMetadata({
