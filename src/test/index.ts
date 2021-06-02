@@ -2,7 +2,7 @@ import { CassandraOperations } from "../cassandra/base";
 // import fs from "fs";
 // import { v4 as uuidV4 } from "uuid";
 import { CassandraConnection } from "./connection";
-import { Goods, IGoods } from "./person";
+import { Goods, IGoods } from "./model/goods";
 
 class CassandraImplementBase extends CassandraOperations<IGoods> {
   constructor() {
@@ -18,7 +18,6 @@ class CassandraImplementBase extends CassandraOperations<IGoods> {
   }
 
   /*
-
     getAll() {
     return this.getAllBase({
       fields: ["id", "name"],

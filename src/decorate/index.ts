@@ -53,7 +53,7 @@ export function virtualProp({ type }: { type?: ITableCreateDataType } = {}) {
   };
 }
 
-export function primary({ field, type }: { field?: string; type?: ITableCreateDataType } = {}) {
+export function partitionKey({ field, type }: { field?: string; type?: ITableCreateDataType } = {}) {
   return function (target: Object, propertyKey: string) {
     const field01 = field || propertyKey;
     const metadataValue: IDocorateMetadata = {
@@ -63,7 +63,7 @@ export function primary({ field, type }: { field?: string; type?: ITableCreateDa
         type: type || "varchar",
       },
     };
-    ReflectHelperService.defineMetadata_Primary({ metadataValue, target });
+    ReflectHelperService.defineMetadata_PartitionKey({ metadataValue, target });
   };
 }
 

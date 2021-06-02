@@ -10,7 +10,7 @@ export class EntityFactory {
     const target01 = new target();
 
     const propsData = ReflectHelperService.getMetadata_AttributesMap(target01);
-    const idProperty = ReflectHelperService.getMetadata_Primary(target01);
+    const idProperty = ReflectHelperService.getMetadata_PartitionKey(target01);
 
     const fullProps = {
       ...idProperty,
@@ -46,7 +46,7 @@ export class EntityFactory {
     const target01 = new target();
 
     const propsData = ReflectHelperService.getMetadata_AttributesMap(target01);
-    const idProperty = ReflectHelperService.getMetadata_Primary(target01);
+    const idProperty = ReflectHelperService.getMetadata_PartitionKey(target01);
 
     const fullProps = {
       ...idProperty,
@@ -70,7 +70,6 @@ export interface IEntity {
 }
 
 export default class BaseEntity implements IEntity {
-  //
   static castFromInput<T extends IEntity>(this: EntityTypeInstance<T>, objData: unknown): T {
     return EntityFactory.fromInputedData(this, objData);
   }
@@ -87,7 +86,7 @@ export default class BaseEntity implements IEntity {
     const output = {} as any;
 
     const propsData = ReflectHelperService.getMetadata_AttributesMap(this);
-    const idProperty = ReflectHelperService.getMetadata_Primary(this);
+    const idProperty = ReflectHelperService.getMetadata_PartitionKey(this);
 
     const fullData = {
       ...propsData,
@@ -106,7 +105,7 @@ export default class BaseEntity implements IEntity {
     const output = {} as any;
 
     const propsData = ReflectHelperService.getMetadata_AttributesMap(this);
-    const idProperty = ReflectHelperService.getMetadata_Primary(this);
+    const idProperty = ReflectHelperService.getMetadata_PartitionKey(this);
     const virtual = ReflectHelperService.getMetadata_Virtual(this);
 
     const fullData = {

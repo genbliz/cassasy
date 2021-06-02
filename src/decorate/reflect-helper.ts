@@ -2,11 +2,11 @@ import "reflect-metadata";
 import { IDocorateMetadata } from "../types";
 
 const DefinedKeys = {
-  properties: Symbol("entity_properties"),
-  entityName: Symbol("entity_name"),
-  primaryKey: Symbol("entity_primaryKey"),
-  virtual: Symbol("entity_virtual"),
-  sortKey: Symbol("entity_sortKey"),
+  attributes: Symbol("entity:attributes"),
+  tablebName: Symbol("entity:tablebName"),
+  partitionKey: Symbol("entity:partitionKey"),
+  virtual: Symbol("entity:virtual"),
+  sortKey: Symbol("entity:sortKey"),
 } as const;
 
 class ReflectHelperServiceBase {
@@ -31,7 +31,7 @@ class ReflectHelperServiceBase {
 
   defineMetadata_Attribute({ metadataValue, target }: { metadataValue: IDocorateMetadata; target: Object }) {
     return this._defineMetadata({
-      metadataKey: DefinedKeys.properties,
+      metadataKey: DefinedKeys.attributes,
       metadataValue,
       target,
     });
@@ -45,9 +45,9 @@ class ReflectHelperServiceBase {
     });
   }
 
-  defineMetadata_Primary({ metadataValue, target }: { metadataValue: IDocorateMetadata; target: Object }) {
+  defineMetadata_PartitionKey({ metadataValue, target }: { metadataValue: IDocorateMetadata; target: Object }) {
     return this._defineMetadata({
-      metadataKey: DefinedKeys.primaryKey,
+      metadataKey: DefinedKeys.partitionKey,
       metadataValue,
       target,
     });
@@ -63,22 +63,22 @@ class ReflectHelperServiceBase {
 
   defineMetadata_TableName({ metadataValue, target }: { metadataValue: string; target: Object }) {
     return this._defineMetadata({
-      metadataKey: DefinedKeys.entityName,
+      metadataKey: DefinedKeys.tablebName,
       metadataValue,
       target,
     });
   }
 
   getMetadata_AttributesMap(target: Object) {
-    return this._getMetadata({ metadataKey: DefinedKeys.properties, target });
+    return this._getMetadata({ metadataKey: DefinedKeys.attributes, target });
   }
 
   getMetadata_Virtual(target: Object) {
     return this._getMetadata({ metadataKey: DefinedKeys.virtual, target });
   }
 
-  getMetadata_Primary(target: Object) {
-    return this._getMetadata({ metadataKey: DefinedKeys.primaryKey, target });
+  getMetadata_PartitionKey(target: Object) {
+    return this._getMetadata({ metadataKey: DefinedKeys.partitionKey, target });
   }
 
   getMetadata_SortKey(target: Object) {
@@ -86,7 +86,7 @@ class ReflectHelperServiceBase {
   }
 
   getMetadata_TableName(target: Object): string {
-    return this._getMetadata({ metadataKey: DefinedKeys.entityName, target });
+    return this._getMetadata({ metadataKey: DefinedKeys.tablebName, target });
   }
 }
 

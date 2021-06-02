@@ -58,7 +58,7 @@ export abstract class CassandraOperations<T> {
   private getTableInfo() {
     const target01 = this.getTargetInstance();
 
-    const primary = ReflectHelperService.getMetadata_Primary(target01);
+    const partitionKey = ReflectHelperService.getMetadata_PartitionKey(target01);
     const sortKey = ReflectHelperService.getMetadata_SortKey(target01);
     const attributes = ReflectHelperService.getMetadata_AttributesMap(target01);
     const tableName = ReflectHelperService.getMetadata_TableName(this.entity);
@@ -67,7 +67,7 @@ export abstract class CassandraOperations<T> {
       throw new Error("tableName must be a string");
     }
 
-    const partitionKey01 = Object.values(primary);
+    const partitionKey01 = Object.values(partitionKey);
     const sortKey01 = Object.values(sortKey);
 
     if (!partitionKey01.length) {
@@ -104,7 +104,7 @@ export abstract class CassandraOperations<T> {
       tableName,
     } = this.getTableInfo();
 
-    const fullProps = [...otherAttributesMeta, partitionKeyMeta, sortKeyMeta];
+    const fullProps = [partitionKeyMeta, sortKeyMeta, ...otherAttributesMeta];
 
     const fieldAnaDataTyeArray: string[] = [];
 
