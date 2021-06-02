@@ -1,5 +1,8 @@
 export type ITableCreateDataType =
-  /* picked from https://cassandra.apache.org/doc/latest/cql/types.html */
+  /* picked from
+    https://cassandra.apache.org/doc/latest/cql/types.html
+    https://docs.aws.amazon.com/keyspaces/latest/devguide/cql.elements.html#cql.data-types
+  */
   "boolean" | "uuid" | "date" | "double" | "float" | "int" | "text" | "time" | "timestamp" | "varchar";
 
 export type IFieldType<T> = Record<keyof T, { type: ITableCreateDataType }>;
