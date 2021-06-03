@@ -2,8 +2,9 @@ import { UniqueIdGeneratorService } from "./../helpers/unique-id-generator-servi
 import { EntityFactory } from "./../decorate/entity";
 import { ReflectHelperService } from "./../decorate/reflect-helper";
 import cassandra from "cassandra-driver";
-import { QueryBuilderService } from "./query-builder";
-import { EntityTypeInstance, IFieldMetadata, IQueryDefinition, ITableCreateDataType } from "../types";
+import { QueryBuilderService } from "./query-helper";
+import { EntityTypeInstance, IQueryDefinition, ITableCreateDataType, ITableInfo } from "../types";
+import { QueryBuilder } from "./query-builder";
 
 export type IFieldTypeLocal = Record<string, { type: ITableCreateDataType }>;
 
@@ -11,14 +12,6 @@ interface ITableCreate<T> {
   keyspaceName: string;
   entity: EntityTypeInstance<T>;
   cassandraClient: () => cassandra.Client;
-}
-
-interface ITableInfo<T> {
-  tableName: string;
-  tableNameFullPath: string;
-  partitionKeyMeta: IFieldMetadata;
-  sortKeyMeta: IFieldMetadata;
-  otherAttributesMeta: IFieldMetadata[];
 }
 
 type IOrderBy<T> = {
@@ -65,7 +58,7 @@ export abstract class CassandraOperations<T> {
   private getMapper() {
     if (!this.mapper) {
       const { tableName } = this.getTableInfo();
-      const modelKey = [tableName[0].toUpperCase(), tableName.slice(1), "modelKey"].join("");
+      const modelKey = [tableName[0].toUpperCase(), tableName.slice(1)].join("");
       const instance = new cassandra.mapping.Mapper(this.client(), {
         models: {
           [modelKey]: {
@@ -159,6 +152,42 @@ export abstract class CassandraOperations<T> {
   }
 
   async findBase({
+    query,
+    limit,
+    fields,
+    orderBy,
+  }: {
+    query: IQueryDefinition<T>;
+    limit?: number;
+    fields?: (keyof T)[];
+    orderBy?: IOrderBy<Partial<T>>;
+  }) {
+    const { tableNameFullPath } = this.getTableInfo();
+
+    let fields01: string = "*";
+    if (fields?.length) {
+      fields01 = fields.join(",");
+    }
+
+    const sql = `SELECT ${fields01} FROM ${tableNameFullPath} WHERE cost > 2000 ALLOW FILTERING`;
+    const result = await this.client().execute(sql);
+
+    return this.toPlainObject<T[]>(result?.rows || []);
+  }
+
+  queryBuilder() {
+    return new QueryBuilder<T>(this.getTableInfo());
+  }
+
+  async findByQuery(query: string | QueryBuilder<T>) {
+    const sql = typeof query === "string" ? query : query.build();
+    console.log({ sql });
+    const result = await this.client().execute(sql);
+    const result01 = this.toPlainObject<T[]>(result.rows || []);
+    return result01;
+  }
+
+  async findBase00({
     query,
     limit,
     fields,

@@ -8,13 +8,16 @@ export type ITableCreateDataType =
 export type IFieldType<T> = Record<keyof T, { type: ITableCreateDataType }>;
 
 //
-type RequireOnePropertyOnly<T, Keys extends keyof T = keyof T> = Pick<T, Exclude<keyof T, Keys>> &
+export type RequireOnePropertyOnly<T, Keys extends keyof T = keyof T> = Pick<T, Exclude<keyof T, Keys>> &
   {
     [K in Keys]-?: Required<Pick<T, K>> & Partial<Record<Exclude<Keys, K>, undefined>>;
   }[Keys];
 
-type TypeFallBack<T> = number extends T ? number : string extends T ? string : T;
-type TypeFallBackArray<T> = number extends T ? number[] : string extends T ? string[] : T;
+// type TypeFallBack<T> = number extends T ? number : string extends T ? string : T;
+// type TypeFallBackArray<T> = number extends T ? number[] : string extends T ? string[] : T;
+
+type TypeFallBack<T> = NonNullable<T>;
+type TypeFallBackArray<T> = T extends null | undefined ? never : T[];
 
 type ICassandraQueryParamBasic<T> = {
   $eq: TypeFallBack<T>;
@@ -50,3 +53,11 @@ export interface IEntity {
 // export type EntityTypeInstance<T> = new (...args: any[]) => T;
 
 export type EntityTypeInstance<T> = new (...args: any[]) => T & IEntity;
+
+export interface ITableInfo<T> {
+  tableName: string;
+  tableNameFullPath: string;
+  partitionKeyMeta: IFieldMetadata;
+  sortKeyMeta: IFieldMetadata;
+  otherAttributesMeta: IFieldMetadata[];
+}

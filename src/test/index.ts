@@ -1,6 +1,4 @@
 import { CassandraOperations } from "../cassandra/base";
-// import fs from "fs";
-// import { v4 as uuidV4 } from "uuid";
 import { CassandraConnection } from "./connection";
 import { Goods, IGoods } from "./model/goods";
 
@@ -32,10 +30,18 @@ class CassandraImplementBase extends CassandraOperations<IGoods> {
     return this.getAllBase();
   }
 
+  findByQuery() {
+    const query = super.queryBuilder().orWhere({ cost: 800 }).select(["cost", "id"]);
+    // .whereIn({ cost: [0, 99] });
+    // const cc: Record<string, string>;
+    return super.findByQuery(query);
+  }
+
   find() {
     return this.findBase({
+      orderBy: { purchaseDate: "asc" },
       query: {
-        cost: { $gte: 1000 },
+        cost: { $eq: 900 },
       },
     });
   }
@@ -86,7 +92,7 @@ class CassandraImplementBase extends CassandraOperations<IGoods> {
 
 export const CassandraImplement = new CassandraImplementBase();
 
-CassandraImplement.find()
+CassandraImplement.findByQuery()
   .then((e) => {
     console.log(e);
     process.exit(0);
