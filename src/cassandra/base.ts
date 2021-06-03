@@ -29,14 +29,14 @@ export abstract class CassandraOperations<T> {
   private readonly keyspaceName: string;
   private readonly query = cassandra.mapping.q;
   private readonly client: () => cassandra.Client;
-  private readonly entity: EntityTypeInstance<T>;
+  private readonly entityRaw: EntityTypeInstance<T>;
   private entityInstance: T | undefined;
   private tableInfo: ITableInfo<T> | undefined;
   private mapper: cassandra.mapping.ModelMapper<T> | undefined;
 
   constructor({ keyspaceName, cassandraClient, entity }: ITableCreate<T>) {
     this.keyspaceName = keyspaceName;
-    this.entity = entity;
+    this.entityRaw = entity;
     this.client = () => cassandraClient();
     if (this.query) {
       //
@@ -53,7 +53,7 @@ export abstract class CassandraOperations<T> {
 
   private getTargetInstance() {
     if (!this.entityInstance) {
-      this.entityInstance = new this.entity();
+      this.entityInstance = new this.entityRaw();
     }
     return this.entityInstance;
   }
@@ -86,7 +86,7 @@ export abstract class CassandraOperations<T> {
     const partitionKey = ReflectHelperService.getMetadata_PartitionKey(target01);
     const sortKey = ReflectHelperService.getMetadata_SortKey(target01);
     const attributes = ReflectHelperService.getMetadata_AttributesMap(target01);
-    const tableName = ReflectHelperService.getMetadata_TableName(this.entity);
+    const tableName = ReflectHelperService.getMetadata_TableName(this.entityRaw);
 
     if (!(tableName && typeof tableName === "string")) {
       throw new Error("tableName must be a string");
@@ -121,13 +121,17 @@ export abstract class CassandraOperations<T> {
     return { ...this.tableInfo };
   }
 
+  private toOutPutData(data01: any): T {
+    return EntityFactory.fromPersistedData(this.entityRaw as any, data01).toOutputData();
+  }
+
   async createTable() {
     const {
       //
       otherAttributesMeta,
       partitionKeyMeta,
       sortKeyMeta,
-      tableName,
+      tableNameFullPath,
     } = this.getTableInfo();
 
     const fullProps = [partitionKeyMeta, sortKeyMeta, ...otherAttributesMeta];
@@ -135,8 +139,7 @@ export abstract class CassandraOperations<T> {
     const fieldAnaDataTyeArray: string[] = [];
 
     fullProps.forEach(({ type, field }) => {
-      const fieldAndType = `${field} ${type}`;
-      fieldAnaDataTyeArray.push(fieldAndType);
+      fieldAnaDataTyeArray.push(`${field} ${type}`);
     });
 
     const comboPrimary = [partitionKeyMeta.field, sortKeyMeta.field].join(",");
@@ -144,13 +147,13 @@ export abstract class CassandraOperations<T> {
 
     const createTblQuery = [
       `CREATE TABLE IF NOT EXISTS`,
-      `${this.keyspaceName}.${tableName}`,
+      `${tableNameFullPath}`,
       `(${fieldAnaDataTyeArray.join(", ")});`,
     ].join(" ");
 
     console.log({ createTblQuery });
 
-    const result = await this.client().execute(createTblQuery, []);
+    const result = await this.client().execute(createTblQuery);
     await this.waitUntilMilliseconds(20000);
     return result;
   }
@@ -171,6 +174,7 @@ export abstract class CassandraOperations<T> {
     if (limit) {
       options.limit = limit;
     }
+
     if (fields?.length) {
       options.fields = fields as string[];
     }
@@ -231,7 +235,7 @@ export abstract class CassandraOperations<T> {
 
     const data01 = { ...data };
 
-    const dataForPersist = EntityFactory.fromInputedData(this.entity as any, data01).toPersistenceData();
+    const dataForPersist = EntityFactory.fromInputedData(this.entityRaw as any, data01).toPersistenceData();
 
     if (!(dataForPersist && typeof dataForPersist === "object")) {
       throw new Error("Invalid persist data");
@@ -262,6 +266,10 @@ export abstract class CassandraOperations<T> {
     const { tableNameFullPath } = this.getTableInfo();
     const sql = `SELECT * FROM ${tableNameFullPath}`;
     const result = await this.client().execute(sql, []);
-    return this.toPlainObject<T[]>(result.rows || []);
+    const result01 = this.toPlainObject<T[]>(result.rows || []);
+    if (result01?.length) {
+      return result01.map((f) => this.toOutPutData(f));
+    }
+    return [];
   }
 }
